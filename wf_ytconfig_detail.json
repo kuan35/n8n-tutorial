@@ -1,0 +1,623 @@
+{
+  "updatedAt": "2026-05-10T08:58:17.911Z",
+  "createdAt": "2026-04-06T16:23:35.656Z",
+  "id": "F73FEdgyEn3uvHeu",
+  "name": "yt答覆設定",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "834754fb-1f21-4f2b-8b03-2ae9ee2acde4",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bfc82c55-b3ac-4e82-acbc-eb4e1d65d588",
+      "name": "Webhook",
+      "webhookId": "834754fb-1f21-4f2b-8b03-2ae9ee2acde4"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.events[0].message.text }}",
+        "options": {
+          "systemMessage": "=你是資料格式化助理。\n\n使用者會傳入包含網址、關鍵字和回覆文字的訊息。\n請解析後，只回傳以下格式的純文字，不要有任何其他說明：\n\n{\"url\":\"完整網址\",\"id\":\"影片ID\",\"key\":\"關鍵字\",\"reply\":\"回覆文字\"}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "4ed4bd2d-b9d0-4604-9694-5fb114a95445",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "id": "85d507e5-a231-4a9f-aa92-e5210b48f5cf",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "g3RusuXhpXBW4W2y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"設定完成！\\n\\n影片：{{ $('AI Agent').item.json.output.match(/\\\"url\\\":\\\"([^\\\"]+)\\\"/)[1] }}\\n關鍵字：{{ $('AI Agent').item.json.output.match(/\\\"key\\\":\\\"([^\\\"]+)\\\"/)[1] }}\\n自動回覆：{{ $('AI Agent').item.json.output.match(/\\\"reply\\\":\\\"([^\\\"]+)\\\"/)[1] }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "3964de56-80a3-4a91-8d9a-85de77edafb3",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        864,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vRJnwsR27vYMCDls",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.item.json.output.replace(/```json|```/g, '').trim();\nconst data = JSON.parse(raw);\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        0
+      ],
+      "id": "9973df78-13da-47ed-bd9e-fc7a916a4b06",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro",
+          "mode": "list",
+          "cachedResultName": "YT自動回覆留言",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "工作表1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "youtube_url": "={{ $json.url }}",
+            "ID": "={{ $json.id }}",
+            "關鍵字": "={{ $json.key }}",
+            "回應": "={{ $json.reply }}"
+          },
+          "schema": [
+            {
+              "id": "youtube_url",
+              "displayName": "youtube_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "關鍵字",
+              "displayName": "關鍵字",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "回應",
+              "displayName": "回應",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "檢查時間",
+              "displayName": "檢查時間",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "已回覆留言ID",
+              "displayName": "已回覆留言ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        0
+      ],
+      "id": "954f90c8-4b57-437d-acf4-1210261dcce3",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dpCSXMw4CiCXFY1k",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+  "activeVersionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+  "versionCounter": 130,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-04-06T16:23:35.658Z",
+      "createdAt": "2026-04-06T16:23:35.658Z",
+      "role": "workflow:owner",
+      "workflowId": "F73FEdgyEn3uvHeu",
+      "projectId": "KRS7v3cpos1gV6AV",
+      "project": {
+        "updatedAt": "2026-03-13T07:37:37.365Z",
+        "createdAt": "2026-03-13T07:29:29.481Z",
+        "id": "KRS7v3cpos1gV6AV",
+        "name": "君寬 曹 <junkuancao35@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "ce6b1984-52e6-4a6a-b00f-fbc54a351bc8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-05-10T07:36:21.000Z",
+    "createdAt": "2026-05-10T07:35:25.212Z",
+    "versionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+    "workflowId": "F73FEdgyEn3uvHeu",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "834754fb-1f21-4f2b-8b03-2ae9ee2acde4",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "bfc82c55-b3ac-4e82-acbc-eb4e1d65d588",
+        "name": "Webhook",
+        "webhookId": "834754fb-1f21-4f2b-8b03-2ae9ee2acde4"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $json.body.events[0].message.text }}",
+          "options": {
+            "systemMessage": "=你是資料格式化助理。\n\n使用者會傳入包含網址、關鍵字和回覆文字的訊息。\n請解析後，只回傳以下格式的純文字，不要有任何其他說明：\n\n{\"url\":\"完整網址\",\"id\":\"影片ID\",\"key\":\"關鍵字\",\"reply\":\"回覆文字\"}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 2.2,
+        "position": [
+          208,
+          0
+        ],
+        "id": "4ed4bd2d-b9d0-4604-9694-5fb114a95445",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          0,
+          240
+        ],
+        "id": "85d507e5-a231-4a9f-aa92-e5210b48f5cf",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "g3RusuXhpXBW4W2y",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.line.me/v2/bot/message/reply",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "specifyBody": "json",
+          "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"設定完成！\\n\\n影片：{{ $('AI Agent').item.json.output.match(/\\\"url\\\":\\\"([^\\\"]+)\\\"/)[1] }}\\n關鍵字：{{ $('AI Agent').item.json.output.match(/\\\"key\\\":\\\"([^\\\"]+)\\\"/)[1] }}\\n自動回覆：{{ $('AI Agent').item.json.output.match(/\\\"reply\\\":\\\"([^\\\"]+)\\\"/)[1] }}\"\n    }\n  ]\n}",
+          "options": {}
+        },
+        "id": "3964de56-80a3-4a91-8d9a-85de77edafb3",
+        "name": "HTTP Request",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          864,
+          0
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "vRJnwsR27vYMCDls",
+            "name": "Header Auth account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const raw = $input.item.json.output.replace(/```json|```/g, '').trim();\nconst data = JSON.parse(raw);\nreturn [{ json: data }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          512,
+          0
+        ],
+        "id": "9973df78-13da-47ed-bd9e-fc7a916a4b06",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro",
+            "mode": "list",
+            "cachedResultName": "YT自動回覆留言",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "工作表1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1l3tqm5PqK7tUA4oXZYgpSYkC3QGcYno5CZ6zRdiDvro/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "youtube_url": "={{ $json.url }}",
+              "ID": "={{ $json.id }}",
+              "關鍵字": "={{ $json.key }}",
+              "回應": "={{ $json.reply }}"
+            },
+            "schema": [
+              {
+                "id": "youtube_url",
+                "displayName": "youtube_url",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "ID",
+                "displayName": "ID",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "關鍵字",
+                "displayName": "關鍵字",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "回應",
+                "displayName": "回應",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "檢查時間",
+                "displayName": "檢查時間",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "已回覆留言ID",
+                "displayName": "已回覆留言ID",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "row_number",
+                "displayName": "row_number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "readOnly": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          688,
+          0
+        ],
+        "id": "954f90c8-4b57-437d-acf4-1210261dcce3",
+        "name": "Append or update row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "dpCSXMw4CiCXFY1k",
+            "name": "Google Sheets account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "Append or update row in sheet",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append or update row in sheet": {
+        "main": [
+          [
+            {
+              "node": "HTTP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "君寬 曹",
+    "name": "Version 1",
+    "description": "",
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-05-10T07:36:21.073Z",
+        "id": 23,
+        "workflowId": "F73FEdgyEn3uvHeu",
+        "versionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+        "event": "activated",
+        "userId": "ce6b1984-52e6-4a6a-b00f-fbc54a351bc8"
+      },
+      {
+        "createdAt": "2026-05-10T08:58:17.975Z",
+        "id": 32,
+        "workflowId": "F73FEdgyEn3uvHeu",
+        "versionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+        "event": "activated",
+        "userId": "ce6b1984-52e6-4a6a-b00f-fbc54a351bc8"
+      },
+      {
+        "createdAt": "2026-05-10T08:58:17.956Z",
+        "id": 31,
+        "workflowId": "F73FEdgyEn3uvHeu",
+        "versionId": "61b6f347-6c1e-428c-b5af-d9bc0c03d790",
+        "event": "deactivated",
+        "userId": "ce6b1984-52e6-4a6a-b00f-fbc54a351bc8"
+      }
+    ]
+  }
+}

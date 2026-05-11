@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>n8n YouTube 自動回覆留言教學</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-w: 260px;
+      --header-h: 60px;
+      --blue: #4f63d2;
+      --blue-light: #eef0fb;
+      --green: #16a34a;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --code-bg: #f6f8fa;
+      --win-color: #0078d4;
+      --mac-color: #333333;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.7;
+    }
+
+    /* ── Header ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 20px;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .logo {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--blue);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .logo span { color: var(--text); font-weight: 400; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 6px 18px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .tab-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .tab-btn.active[data-tab="windows"] {
+      background: var(--win-color);
+      border-color: var(--win-color);
+      color: #fff;
+    }
+    .tab-btn.active[data-tab="mac"] {
+      background: var(--mac-color);
+      border-color: var(--mac-color);
+      color: #fff;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: flex;
+      margin-top: var(--header-h);
+      min-height: calc(100vh - var(--header-h));
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      position: fixed;
+      top: var(--header-h);
+      bottom: 0;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: #fafafa;
+      padding: 20px 0 40px;
+    }
+    .toc-title {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 20px 10px;
+    }
+    #toc a {
+      display: block;
+      padding: 5px 20px;
+      font-size: .875rem;
+      color: var(--text);
+      text-decoration: none;
+      border-left: 3px solid transparent;
+      transition: all .12s;
+      line-height: 1.5;
+    }
+    #toc a:hover { background: var(--blue-light); color: var(--blue); }
+    #toc a.active { border-left-color: var(--blue); color: var(--blue); font-weight: 600; background: var(--blue-light); }
+
+    /* ── Main content ── */
+    main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      min-width: 0;
+      padding: 48px 56px 80px;
+      max-width: 900px;
+    }
+
+    /* ── Markdown styles ── */
+    #content h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
+    #content h2 { font-size: 1.35rem; font-weight: 700; margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--border); scroll-margin-top: 80px; }
+    #content h3 { font-size: 1.05rem; font-weight: 600; margin: 28px 0 10px; color: #2d3748; scroll-margin-top: 80px; }
+    #content h4 { font-size: .95rem; font-weight: 600; margin: 20px 0 8px; }
+
+    #content p { margin-bottom: 14px; }
+    #content ul, #content ol { margin: 10px 0 14px 24px; }
+    #content li { margin-bottom: 5px; }
+    #content li > ul, #content li > ol { margin-top: 4px; margin-bottom: 4px; }
+
+    #content a { color: var(--blue); text-decoration: none; }
+    #content a:hover { text-decoration: underline; }
+
+    #content strong { font-weight: 700; }
+    #content em { font-style: italic; }
+
+    #content blockquote {
+      border-left: 4px solid var(--blue);
+      background: var(--blue-light);
+      padding: 12px 16px;
+      margin: 16px 0;
+      border-radius: 0 6px 6px 0;
+      color: #374151;
+    }
+    #content blockquote p { margin: 0; }
+
+    #content code {
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: .875em;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      border: 1px solid #e1e4e8;
+    }
+    #content pre {
+      background: #1e1e2e;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 16px 0;
+      padding: 0;
+    }
+    #content pre code {
+      background: transparent;
+      border: none;
+      padding: 16px 20px;
+      display: block;
+      font-size: .875rem;
+      line-height: 1.6;
+      color: #cdd6f4;
+    }
+
+    #content table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+      font-size: .9rem;
+    }
+    #content th {
+      background: #f3f4f6;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    #content td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    #content tr:nth-child(even) td { background: #fafafa; }
+
+    #content hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    /* ── OS badge ── */
+    .os-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: .8rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .os-badge.win { background: #dbeafe; color: var(--win-color); }
+    .os-badge.mac { background: #f3f4f6; color: var(--mac-color); }
+
+    /* ── Loading ── */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin-right: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      aside { display: none; }
+      main { margin-left: 0; padding: 24px 20px 60px; }
+      .logo span { display: none; }
+      header { gap: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">n8n<span> YouTube 自動回覆留言教學</span></div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="windows">🪟 Windows</button>
+    <button class="tab-btn" data-tab="mac">🍎 Mac</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="toc-title">目錄</div>
+    <nav id="toc"></nav>
+  </aside>
+  <main>
+    <div id="content">
+      <div class="loading"><div class="spinner"></div>載入中…</div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+  let currentTab = 'windows';
+
+  // Configure marked
+  marked.setOptions({
+    highlight: (code, lang) => {
+      if (lang && hljs.getLanguage(lang)) {
+        return hljs.highlight(code, { language: lang }).value;
+      }
+      return hljs.highlightAuto(code).value;
+    },
+    breaks: false,
+    gfm: true
+  });
+
+  async function loadContent(tab) {
+    const contentEl = document.getElementById('content');
+    const tocEl = document.getElementById('toc');
+    contentEl.innerHTML = '<div class="loading"><div class="spinner"></div>載入中…</div>';
+    tocEl.innerHTML = '';
+
+    try {
+      const file = tab === 'windows' ? 'windows.md' : 'mac.md';
+      const resp = await fetch(file);
+      if (!resp.ok) throw new Error('無法載入檔案');
+      const md = await resp.text();
+      const html = marked.parse(md);
+
+      const badge = tab === 'windows'
+        ? '<div class="os-badge win">🪟 Windows 版</div>'
+        : '<div class="os-badge mac">🍎 Mac 版</div>';
+
+      contentEl.innerHTML = badge + html;
+
+      // Syntax highlight
+      contentEl.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+      // Build TOC from h2
+      const headings = contentEl.querySelectorAll('h2');
+      headings.forEach((h, i) => {
+        const id = 'section-' + i;
+        h.id = id;
+        const a = document.createElement('a');
+        a.href = '#' + id;
+        a.textContent = h.textContent.replace(/^#+\s*/, '');
+        a.addEventListener('click', e => {
+          e.preventDefault();
+          h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        tocEl.appendChild(a);
+      });
+
+      // Scroll spy
+      setupScrollSpy();
+
+    } catch (err) {
+      contentEl.innerHTML = '<div style="padding:40px;color:#ef4444">載入失敗：' + err.message + '</div>';
+    }
+  }
+
+  function setupScrollSpy() {
+    const links = document.querySelectorAll('#toc a');
+    if (!links.length) return;
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const active = document.querySelector(`#toc a[href="#${entry.target.id}"]`);
+          if (active) {
+            active.classList.add('active');
+            active.scrollIntoView({ block: 'nearest' });
+          }
+        }
+      });
+    }, { rootMargin: '-60px 0px -70% 0px' });
+
+    document.querySelectorAll('#content h2[id]').forEach(h => observer.observe(h));
+  }
+
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (tab === currentTab) return;
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadContent(tab);
+    });
+  });
+
+  // Initial load
+  loadContent('windows');
+</script>
+</body>
+</html>
