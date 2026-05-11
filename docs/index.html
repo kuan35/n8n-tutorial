@@ -237,6 +237,9 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* 程式碼區塊全白，不使用 highlight.js 彩色 */
+    #content pre code * { color: #e6edf3 !important; }
+
     /* ── Mobile ── */
     @media (max-width: 768px) {
       aside { display: none; }
@@ -310,7 +313,12 @@
       // Build TOC from h2
       const headings = contentEl.querySelectorAll('h2');
       headings.forEach((h, i) => {
-        const id = 'section-' + i;
+        // 用標題文字生成 ID，與 markdown 內文錨點格式一致
+        const id = h.textContent
+          .toLowerCase()
+          .replace(/[^\w一-鿿\s-]/g, '')
+          .trim()
+          .replace(/\s+/g, '-');
         h.id = id;
         const a = document.createElement('a');
         a.href = '#' + id;
