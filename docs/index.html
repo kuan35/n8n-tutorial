@@ -321,8 +321,8 @@
       const html = marked.parse(md);
 
       const badge = tab === 'windows'
-        ? '<div class="os-badge win">🪟 Windows 版</div>'
-        : '<div class="os-badge mac">🍎 Mac 版</div>';
+        ? '<div class="os-badge win">Windows 版</div>'
+        : '<div class="os-badge mac">Mac 版</div>';
 
       contentEl.innerHTML = badge + html;
 
