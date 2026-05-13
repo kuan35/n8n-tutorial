@@ -45,9 +45,9 @@
 
 ### 2-2 建立 n8n 資料夾
 
-在本機建立一個資料夾存放 n8n 設定，例如：
+在本機建立一個資料夾存放設定檔，例如 `C:\n8n-local\`（用檔案總管建立，或在 PowerShell 執行）：
 ```
-C:\n8n-data\
+mkdir C:\n8n-local
 ```
 
 ### 2-3 建立 docker-compose.yml
@@ -55,32 +55,48 @@ C:\n8n-data\
 在上述資料夾內建立 `docker-compose.yml`，內容如下：
 
 ```yaml
-version: '3.8'
-
 services:
   n8n:
     image: n8nio/n8n:latest
+    container_name: n8n
     restart: unless-stopped
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=localhost
+      - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=https://YOUR_NGROK_DOMAIN.ngrok-free.app
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
       - GENERIC_TIMEZONE=Asia/Taipei
       - N8N_SECURE_COOKIE=false
     volumes:
-      - ./n8n-data:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    restart: unless-stopped
+    command: http --domain=YOUR_NGROK_DOMAIN.ngrok-free.app n8n:5678
+    environment:
+      - NGROK_AUTHTOKEN=YOUR_TOKEN_HERE
+    ports:
+      - "4040:4040"
+    depends_on:
+      - n8n
+
+volumes:
+  n8n_data:
 ```
 
-> **注意**：`WEBHOOK_URL` 先保持原樣，第 4 節取得 ngrok domain 後再回來修改。
+> **注意**：`YOUR_NGROK_DOMAIN` 和 `YOUR_TOKEN_HERE` 先保持原樣，第 3 節取得資料後再回來修改。
 
-### 2-4 第一次啟動 n8n
+### 2-4 第一次啟動 n8n（建立帳號用）
 
-在終端機進入資料夾，執行：
-```bash
-docker compose up -d
+在 PowerShell 進入資料夾，先單獨啟動 n8n：
+```
+cd C:\n8n-local
+docker compose up -d n8n
 ```
 
 等待約 30 秒後，開啟瀏覽器前往 [http://localhost:5678](http://localhost:5678)，依照畫面提示建立管理員帳號。
@@ -89,54 +105,46 @@ docker compose up -d
 
 ## 3. ngrok 固定網域設定
 
+ngrok 透過 Docker 執行，**不需要另外安裝**。只需要申請帳號取得 Token 和固定 Domain，填入 `docker-compose.yml` 即可。
+
 ### 3-1 申請帳號並取得 Authtoken
 
 1. 前往 [https://ngrok.com](https://ngrok.com) 註冊免費帳號
 2. 登入後前往 **Your Authtoken** 頁面，複製 Token
-3. 下載並安裝 ngrok（或使用 `choco install ngrok`）
 
-### 3-2 設定 Authtoken
-
-在終端機執行：
-```bash
-ngrok config add-authtoken YOUR_TOKEN_HERE
-```
-
-### 3-3 取得免費固定 Domain
+### 3-2 取得免費固定 Domain
 
 1. 登入 ngrok Dashboard
 2. 左側選單點選 **Domains**
 3. 點選 **New Domain**，系統會分配一個固定 domain，例如：
    ```
-   uncallused-semiexpressionistic-deane.ngrok-free.app
+   smashing-brunch-exonerate.ngrok-free.app
    ```
 4. 記下這個 domain
 
-### 3-4 啟動 ngrok 隧道
+### 3-3 填入 docker-compose.yml
 
-```bash
-ngrok http --domain=YOUR_FIXED_DOMAIN.ngrok-free.app 5678
-```
+編輯 `C:\n8n-local\docker-compose.yml`，將三個地方替換成你的資料：
 
-啟動後，ngrok 會顯示連線狀態。這個視窗必須保持開著，關掉就斷線。
+| 找到這行 | 改成 |
+|---|---|
+| `NGROK_AUTHTOKEN=YOUR_TOKEN_HERE` | `NGROK_AUTHTOKEN=你的Token` |
+| `--domain=YOUR_NGROK_DOMAIN.ngrok-free.app` | `--domain=你的domain` |
+| `WEBHOOK_URL=https://YOUR_NGROK_DOMAIN.ngrok-free.app` | `WEBHOOK_URL=https://你的domain` |
 
 ---
 
-## 4. 重新啟動 n8n（含 ngrok 網域）
+## 4. 啟動完整服務（n8n + ngrok）
 
-回到 `docker-compose.yml`，將 `WEBHOOK_URL` 改為你的 ngrok domain：
+`docker-compose.yml` 填好後，在 PowerShell 執行：
 
-```yaml
-- WEBHOOK_URL=https://YOUR_FIXED_DOMAIN.ngrok-free.app
 ```
-
-重啟 n8n：
-```bash
-docker compose down
 docker compose up -d
 ```
 
-確認 n8n 仍可透過 [http://localhost:5678](http://localhost:5678) 存取。
+確認 ngrok 連線正常：開啟 [http://localhost:4040](http://localhost:4040)，看到你的 domain 顯示 `online` 即成功。
+
+> n8n 編輯介面始終透過 [http://localhost:5678](http://localhost:5678) 存取，不需要用 ngrok 網址開啟 n8n。
 
 ---
 
@@ -174,10 +182,14 @@ docker compose up -d
 2. 上方 → **建立憑證** → **OAuth 用戶端 ID**
 3. 應用程式類型選 **網頁應用程式**
 4. 名稱填 `n8n`
-5. **已授權的重新導向 URI** → 新增：
+5. **已授權的重新導向 URI** → 新增以下**兩個**：
    ```
    http://localhost:5678/rest/oauth2-credential/callback
    ```
+   ```
+   https://YOUR_NGROK_DOMAIN.ngrok-free.app/rest/oauth2-credential/callback
+   ```
+   > 將 `YOUR_NGROK_DOMAIN` 替換為第 3 節取得的 domain（OAuth 授權畫面會需要用到）
 6. 點選**建立**
 7. 畫面會顯示「用戶端 ID」和「用戶端密鑰」→ **兩者都要複製保存**
 
