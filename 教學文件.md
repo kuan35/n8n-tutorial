@@ -643,8 +643,7 @@ return [{ json: {
    - **Value 1**：`={{ $json.action }}`
    - **Operation**：`is not equal to`
    - **Value 2**：`skip`
-3. **Options** → **Type Validation**：改為 `Loose`（避免空值報錯）
-4. 連接：**留言過濾** → **有動作?**
+3. 連接：**留言過濾** → **有動作?**
    - **True** 端口 → 接下一個 If 節點
    - **False** 端口 → 接回 **Loop Over Items** 的 Loop 端口
 
@@ -659,8 +658,7 @@ return [{ json: {
    - **Value 1**：`={{ $json.action }}`
    - **Operation**：`equal to`
    - **Value 2**：`reply`
-3. **Options** → **Type Validation**：`Loose`
-4. 連接：**有動作?**（True）→ **需要回覆?**
+3. 連接：**有動作?**（True）→ **需要回覆?**
 
 ---
 
@@ -750,9 +748,7 @@ return [{ json: {
      ```
    - **System Message**：
      ```
-     你是 YouTube 頻道助理。根據以下資訊，用繁體中文生成一則簡短的 LINE 通知訊息。
-     action=reply 時說已自動回覆；action=notify 時說有新留言待確認。
-     要包含留言者名稱和留言內容。不要超過 3 行。不要加任何多餘說明。
+     你是 YouTube 頻道的 LINE 通知助理。根據提供的資訊，用繁體中文生成一則簡短友善的 LINE 通知。已回覆的用 ✅ 開頭；新留言需確認的用 ⚠️ 開頭。不超過 4 行，直接輸出訊息內容，不要加任何前綴或說明。
      ```
 3. 將 **Google Gemini Chat Model** 連接到此節點的 **Model** 插槽
 4. 連接：**更新已回覆紀錄** → **AI生成通知**
