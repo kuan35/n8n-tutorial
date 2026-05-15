@@ -640,7 +640,7 @@ return [{ json: {
 
 1. 搜尋 `If` → 選擇
 2. **Conditions** 設定：
-   - **Value 1**：`={{ $json.action }}`
+   - **Value 1**：`{{ $json.action }}`
    - **Operation**：`is not equal to`
    - **Value 2**：`skip`
 3. 連接：**留言過濾** → **有動作?**
@@ -655,7 +655,7 @@ return [{ json: {
 
 1. 搜尋 `If` → 選擇
 2. **Conditions** 設定：
-   - **Value 1**：`={{ $json.action }}`
+   - **Value 1**：`{{ $json.action }}`
    - **Operation**：`equal to`
    - **Value 2**：`reply`
 3. 連接：**有動作?**（True）→ **需要回覆?**
