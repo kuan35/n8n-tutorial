@@ -542,7 +542,11 @@ Schedule Trigger → 讀取規則 → Loop Over Items → GET YouTube留言 → 
    - **Document**：選擇 `YT自動回覆留言`
    - **Sheet**：選擇 `工作表1`
    - **Return All**：開啟（讀取所有列）
-3. 連接：**Schedule Trigger** → **讀取規則**
+3. 往下捲到 **Options** → 點選 **Add Option** → 選擇 **Row Numbers** 並開啟
+
+   > 這個選項會在每列資料加上 `row_number` 欄位，後續更新試算表時需要用它來定位正確的列
+
+4. 連接：**Schedule Trigger** → **讀取規則**
 
 ---
 
